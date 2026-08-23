@@ -1,0 +1,684 @@
+
+lea     ($44dc,PC), A0; ($22584)    
+trap    #$5  ; print 0 terminated string, address of string at A0 (in exec)
+
+status after skip: expected 0x4000 ?????
+-------------------
+40013a: echo'ed 0x78 to port a in loopback and got same back
+401ebc: echo'd 16 times
+A2 points to char (send/recv)
+cmb: write16 SerialDrivers: 0 (PC:004001a2)
+4001aa
+
+00400ef6: program pit
+
+4011cc: floppy
+
+00401bda: read from wd0
+
+
+wd-init
+test loopback
+  write to host write, read back from inpReg
+  write to vector, read back from ctl reg
+than:
+
+
+?? may be 00cc0007 is deselect controller ??
+
+ERROR wd: write8 03 to 00cc0007 (unknown wd register) (PC:00401aa8)
+ERROR wd: write8 00 to 00cc0007 (unknown wd register) (PC:00401aae)
+wd: write8 00 to 00cc0008 (host write reg) (PC:00401ab0)
+expects cc0009 = 0 ?
+wd: read8 00cc0009 returning statusReg c2 (PC:00401bd6)
+
+00401bd6 1c 28 00 09               move.b  ($9,A0), D6                 
+00401bda cc 05                     and.b   D5, D6                      
+<dbg>reg
+A0: 00cc0000 A1:00cc000b A2:00001000 A3:001f0503 A4:00cc0007 A5:004019be A6:00400284 A7:00000a14
+D0: 23222524 D1:00000000 D2:ffffffe8 D3:001f0503 D4:001ebadc D5:fffffffb D6:000000cc D7:02000000
+VBR:00000000 PC: 00401bda SR:00002008 sxNzvc
+
+
+stack
+00000a14 00401ba6
+  00000a18 00401ad0
+  00000a1c 00401a6a
+  00000a20 00000000
+  00000a24 ffe9ffff
+  00000a28 00000003
+  00000a2c 00000000
+  00000a30 0000173e
+  00000a34 00001a32
+  00000a38 00000000
+  00000a3c 02000000
+  00000a40 00400a0a
+  00000a44 001a0000
+  00000a48 00680000
+  00000a4c 00180000
+  00000a50 004009c6
+  00000a54 00400000
+  00000a58 00400284
+  00000a5c 00400d4e
+
+
+
+401B12: does return
+401B32: does return (wait for c2)
+401B42 zurück zu 401b30
+401b32 does return (wait for c2)
+dann readInpReg
+status=ec
+read InpReg
+dann wait for status=0 ???
+
+
+402592: end of read line
+402076: end of readchar
+402190: ?? end of read line
+
+
+
+
+boot cs
+cs: read8 00d00000 (PC:0040156c)
+cs: read8 00d00001 (PC:0040156c)
+
+System file: 
+cs: read8 00d00000 (PC:0040163c)
+cs: read8 00d00001 (PC:0040163c)
+cs: read8 00d00000 (PC:0040163c)
+cs: read8 00d00001 (PC:0040163c)
+cs: read8 00d00000 (PC:0040163c)
+
+d00000: move.w  (A2), D0  // word access !
+	andi.w  #$c00, D0                   
+	cmpi.w  #$c00, D0 
+
+write 0400 to d000008
+
+read w d000000
+and c00
+is c00 ?
+004016e8 32 3c 40 00               move.w  #$4000, D1                  
+004016ec 61 00 ff 38               bsr     $401626                     D1: ffe94000 
+#8001 word to d000008
+#0000 word to d000000
+
+A0:062C
+wait for A0+0x14 <> 0
+---------------
+Booting from cs0
+cs: write16 8000 to 00d00008 (PC:0040165c)
+cs: read16 00d00000 (PC:0040163c)
+cs: write16 0316 to 00d00008 (PC:004016e0)  -> 316<<1=62C -> address of IOPB
+cs: read16 00d00000 (PC:0040163c)
+cs: write16 8001 to 00d00008 (PC:004016f2)
+cs: read16 00d00000 (PC:0040163c)
+cs: write16 0000 to 00d00000 (PC:004016fc)
+
+wait for A0+0x14(=640) <> 0
+
+0000062c: 00 00 00 00 00 02 00 00  08 00 00 00 04 00 00 00   ................
+0000063c: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+0000064c: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+0000065c: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00   ................
+-------------
+boot
+1)
+Booting from cs0
+WARNING cs: write16 8000 to 00d00008 statCount:0 IOPB addr: 0000062c (PC:0040165c) -> may be clear IOPB
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+WARNING cs: write16 0316 to 00d00008 statCount:1 IOPB addr: 0000062c (PC:004016e0)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+WARNING cs: write16 8001 to 00d00008 statCount:2 unknown2: 8001 (PC:004016f2) -> may be set IOPB
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+cs: write16 0000 to 00d00000 (goReg) (PC:004016fc)
+
+rewind, excpects status = 0x80
+
+2)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+WARNING cs: write16 0316 to 00d00008 statCount:0 IOPB addr: 002c062c (PC:004016e0)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+WARNING cs: write16 8001 to 00d00008 statCount:1 IOPB addr: 002d0002 (PC:004016f2)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+cs: write16 0000 to 00d00000 (goReg) (PC:004016fc)
+------------
+exec load
+<exec>load xxx
+WARNING cs: write16 8000 to 04d00008 (statusReg) (PC:0001de44)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 2759 to 04d00008 (statusReg) (PC:0001df96)	-> IOPB lower word
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 4004 to 04d00008 (statusReg) (PC:0001dfa2)	-> ??????????
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 8001 to 04d00008 (statusReg) (PC:0001dfaa)
+WARNING cs: write16  IOPB: 8008 (PC:0001dfaa)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+cs: write16 8002 to 04d00000 (goReg) (PC:0001dfb4)
+ERROR cs: write16 +break 8002 to 04d00000 (goReg, dont know how to handle command) (PC:0001dfb4)
+---
+exec load
+WARNING cs: write16 8000 to 04d00008 (statusReg) (PC:0001de3e)
+WARNING cs: write16 8000 to 04d00008 (statusReg) (PC:0001de3e)
+dann riesen delay
+00024eb2 clear 1f bytes
+0001df46 11 40 00 05               move.b  D0, ($5,A0)  ; D0=02=Rewind, A0=24eb2 24eb2<<1=12759
+0001df52 31 40 00 0c               move.w  D0, ($c,A0)	; data buffer length=0x0100
+
+0001df68 31 40 00 06               move.w  D0, ($6,A0)                 D0: 329a0001 
+0001df6c 42 68 00 14               clr.w   ($14,A0)                    
+0001df70 42 68 00 16               clr.w   ($16,A0)                    SR: 00002004 sxnZvc 
+0001df74 42 68 00 18               clr.w   ($18,A0)                    
+0001df78 22 08                     move.l  A0, D1                      
+0001df7a e2 89                     lsr.l   #1, D1                      D1: 00024eb2 SR: 00002000 sxnzvc ; word address of IOPB
+0001df7c 24 01                     move.l  D1, D2                      D1: 00012759 			; in D2
+0001df7e 48 42                     swap    D2                          D2: 00012759 
+0001df80 e5 4a                     lsl.w   #2, D2                      D2: 27590001 			; shift upper word addr << 2
+0001df82 36 01                     move.w  D1, D3                      D2: 27590004 			; word addr IOPB in D3
+0001df84 e0 4b                     lsr.w   #8, D3                      D3: 00002759 			; D3 >> 8
+0001df86 ec 4b                     lsr.w   #6, D3                      D3: 00000027 			; D3 >> 6, 2 bits left
+0001df88 02 43 ff ff               andi.w  #$ffff, D3                  D3: 00000000 SR: 00002015 sXnZvC 
+
+A0: 00024eb2 A1:0002048c A2:04d00000 A3:00000000 A4:00000000 A5:00024296 A6:00024de8 A7:00024bf4
+D0: 329a0001 D1:00012759 D2:27590004 D3:00000000 D4:00000000 D5:00000000 D6:00000002 D7:00000000
+VBR:00000000 PC: 0001df88 SR:00002015 sXnZvC
+
+0001df8c 84 43                     or.w    D3, D2                      SR: 00002014 sXnZvc 
+0001df8e 02 41 3f ff               andi.w  #$3fff, D1                  SR: 00002010 sXnzvc 
+0001df92 61 00 ff 78               bsr     $1df0c        
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df12)
+WARNING cs: write16 2759 to 04d00008 (statusReg) (PC:0001df12)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df12)
+WARNING cs: write16 4004 to 04d00008 (statusReg) (PC:0001df12)
+WARNING cs: write16 8001 to 04d00008 (statusReg) (PC:0001df12)
+cs: write16 8002 to 04d00000 (goReg) (PC:0001df12)
+
+bit 15: next is lower IOPB (13..0) in port, 14..1 in address
+bit 14: next is upper IOPB
+24eb2 24eb2>>1=12759
+
+lower: 2759
+upper: 4
+
+2759
+0004
+0008 1
+0010 2
+0020 3
+0040 4
+0080 5
+0100 6
+0200 7
+0400 8
+0800 9
+0100 10
+0200 11
+0400 12
+0800 13
+1000 14
+2000 15
+4000 16
+8000 17
+xxx 18
+
+addr = lower << 1 (14 bit)
+------------
+if bit15 -> next is iopb(L)
+elseif bit14 -> is iopb(H)
+elseif (bit15 && bit14) -> ???
+else is iopb(H)
+------------
+boot
+cs: write16 8000 to 00d00008 (statusReg), nextIs:2 (PC:0040165c)
+		cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+cs: write16 0316 to 00d00008 (statusReg), nextIs:2 (PC:004016e0)
+		cs:  IOPB(L), got 0316, IOPB:00000316 IOPB-addr:0000062c (PC:004016e0)
+		cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+cs: write16 8001 to 00d00008 (statusReg), nextIs:2 (PC:004016f2)
+		cs: read16 00d00000 (goReg, returning 0c00) (PC:0040163c)
+
+cs: write16 0000 to 00d00000 (goReg) (PC:004016fc)
+	WARNING cs: write16 0000 to 00d00000 (statusReg), nextIs:2 (PC:004016fc)
+	cs:  IOPB(L), got 0000, IOPB:00000000 IOPB-addr:00000000 (PC:004016fc)
+-----------
+exec
+WARNING cs: write16 8000 to 04d00008 (statusReg), nextIs:2 (PC:0001de44)
+WARNING cs: write16 8000 to 04d00008 (statusReg), nextIs:2 (PC:0001e158)
+		cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 2759 to 04d00008 (statusReg), nextIs:2 (PC:0001df96)
+		cs:  IOPB(L), got 2759, IOPB:00002759 IOPB-addr:00004eb2 (PC:0001df96)
+		cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+		cs:  IOPB(H), got 4004, IOPB:00012759 IOPB-addr:00024eb2 (PC:0001dfa2)
+WARNING cs: write16 4004 to 04d00008 (statusReg), nextIs:1 (PC:0001dfa2)
+		cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 8001 to 04d00008 (statusReg), nextIs:2 (PC:0001dfaa)
+		cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+		cs: write16 8002 to 04d00000 (goReg) (PC:0001dfb4)
+WARNING cs: write16 8002 to 04d00000 (statusReg), nextIs:2 (PC:0001dfb4)
+WARNING cs: Starting execution of 0002 (REWIND), iopb @00024eb2
+ (PC:0001b7ea)
+WARNING cs: End of execution, status: 0080, status1:0000
+
+
+
+---
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 2759 to 04d00008 (statusReg), nextIs:2 (PC:0001df96)
+cs:  IOPB(L), got 2759, IOPB:00002759 IOPB-addr:00004eb2 (PC:0001df96)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+cs:  IOPB(H), got 4004, IOPB:00012759 IOPB-addr:00024eb2 (PC:0001dfa2)
+WARNING cs: write16 4004 to 04d00008 (statusReg), nextIs:1 (PC:0001dfa2)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+WARNING cs: write16 8001 to 04d00008 (statusReg), nextIs:2 (PC:0001dfaa)
+cs: read16 04d00000 (goReg, returning 0c00) (PC:0001df1c)
+cs: write16 8002 to 04d00000 (goReg) (PC:0001dfb4)
+WARNING cs: write16 8002 to 04d00000 (statusReg), nextIs:2 (PC:0001dfb4) -> reset controller
+WARNING cs: Starting execution of 0010 (READ), iopb @00024eb2
+
+----
+exec
+1) rewind
+                                   andi.w  #$7f7f, D0                  ; 8000=complete, 0080=filemark
+0001dfd4 67 0e                     beq     $1dfe4   
+
+2) read, same complete and filemark filtered out, expected 0
+3) 
+0001e066 28 3c 00 08 00 00         move.l  #$80000, D4                 
+0001e06c 30 28 00 14               move.w  ($14,A0), D0                
+0001e070 66 0c                     bne     $1e07e                      
+0001e072 61 00 d7 6e               bsr     $1b7e2                      
+0001e076 53 84                     subq.l  #1, D4                      
+0001e078 66 f2                     bne     $1e06c                      
+0001e07a 60 00 0a 50               bra     $1eacc                      
+0001e07e 30 28 00 14               move.w  ($14,A0), D0			; status not 0, get status                
+0001e082 02 40 7f ff               andi.w  #$7fff, D0                   ; filter out complete
+0001e086 66 0e                     bne     $1e096                       ; not zero, then branch
+0001e088 45 fa 24 02               lea     ($2402,PC), A2; ($2048c)    
+0001e08c 52 aa 00 3c               addq.l  #1, ($3c,A2)                
+0001e090 4c df 7f ff               movem.l (A7)+, D0-D7/A0-A6          
+0001e094 4e 77                     rtr                                 
+0001e096 0c 40 40 00               cmpi.w  #$4000, D0                   ; 4000=end of data
+0001e09a 66 0a                     bne     $1e0a6                      
+0001e09c 41 fa 44 62               lea     ($4462,PC), A0; ($22500)     ;(22500)=0229ce -> 0d,0a,'End of tape',0
+0001e0a0 4e 45                     trap    #$5                         
+0001e0a2 00 0e                     dc.w    $000e; ILLEGAL              
+0001e0a4 60 10                     bra     $1e0b6                      
+0001e0a6 41 fa 44 dc               lea     ($44dc,PC), A0; ($22584)     ;(22584)=22e08 -> 0d,0a,'Tape Error:  ',0
+0001e0aa 4e 45                     trap    #$5                         
+0001e0ac 00 0e                     dc.w    $000e; ILLEGAL              
+0001e0ae 4e 45                     trap    #$5                         
+0001e0b0 00 07 4e 45               ori.b   #$45, D7                    
+0001e0b4 00 0c                     dc.w    $000c; ILLEGAL              
+0001e0b6 4e 4e                     trap    #$e                         
+0001e0b8 08 ef 00 00 00 3d         bset    #$0, ($3d,A7)               
+0001e0be 4c df 7f ff               movem.l (A7)+, D0-D7/A0-A6          
+0001e0c2 4e 77                     rtr                          
+
+--------------------------------
+
+GO REGISTER            : 0C00    0000 1100
+STATUS REGISTER        : 0000
+BUS ERROR WHILE MASTER : RESET
+CLEAR TO SEND          : SET
+CONTROLLER READY       : SET
+SELF TEST FAILURE      : NO
+--------------------------------
+flush_q
+init_
+rewind
+out_chan
+start
+go
+----------------
+000039e6 60 f2                     bra     $39da                       
+<dbg>s
+000039da 4a 78 33 20               tst.w   $3320.w    
+
+Magtape Cartridge Streamer Logic Test  Rev C2           18:01:23  03/31/88
+cs: Reset controller and drive (PC:00003650)
+cs: Reset controller and drive (PC:00003650)
+cs: dont know what 8001 means (PC:0000368e)
+cs: Starting execution of 0005 (STATUS), iopb @00003110 (PC:000038d4)
+cs: setting IOPB to next in chain (curr IOPB: 00001888 (address:00003110), next: 00001898 (address:00003130) (PC:000038d4)
+cs: End of execution, status: 8000, status1:0000 (PC:000038d4)
+cs: Get version (PC:00003828)
+cs: dont know what 8001 means (PC:0000368e)
+cs: Starting execution of 0310 (READ), iopb @00003130 (PC:00020e48)
+cs: setting IOPB to next in chain (curr IOPB: 00001898 (address:00003130), next: 00001888 (address:00003110) (PC:00020e48)
+cs: End of execution, status: 8080, status1:0100 (PC:00020e48)
+
+now waits for status <> 0 in IOPB1 ???? (3110)
+8001: reset chain ??
+-----------------
+<mcsfs>out_chan
+cs: read16 00d00000 (goReg, returning 0c00) (PC:00003b2e)
+cs: write16 183d to 00d00008 (statusReg), nextIs:2 (PC:000037be)
+cs:  IOPB(L), got 183d, IOPB:0000183d IOPB-addr:0000307a (PC:000037be)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:00003afe)
+cs:  IOPB(H), got 4000, IOPB:0000183d IOPB-addr:0000307a (PC:000037e2)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:00003afe)
+
+<mcsfs>start
+cs: read16 00d00000 (goReg, returning 0c00) (PC:00003b2e)
+cs: dont know what 8001 means (PC:000036dc)
+cs: read16 00d00000 (goReg, returning 0c00) (PC:00003afe)
+
+<mcsfs>go
+cs: write16 8002 to 00d00000 (goReg) (PC:00003716)
+cs: Starting execution of 0000 (INIT), iopb @0000307a (PC:00020e34)
+cs: using int vector c0 (PC:00020e34)
+cs: setting IOPB to next in chain (curr IOPB: 0000183d (address:0000307a), next: 0000184d (address:0000309a) (PC:00020e34)
+cs: End of execution, status: 8000, status1:0000 (PC:00020e34)
+
+<mcsfs>go
+cs: write16 8002 to 00d00000 (goReg) (PC:00003716)
+cs: Starting execution of 0002 (REWIND), iopb @0000309a (PC:00020e38)
+cs: setting IOPB to next in chain (curr IOPB: 0000184d (address:0000309a), next: 0000185d (address:000030ba) (PC:00020e38)
+cs: End of execution, status: 8000, status1:8088 (PC:00020e38)
+
+------------
+test8:
+init_
+rewind		p:0 1:0088 CS_STAT1_STAT1BIT|CS_STAT1_BOM
+enb_fm		
+write		p:0 1:0082 CS_STAT1_STAT1BIT|CS_STAT1_EOM
+rewind		p:0 1:0088
+read		p:8002 1:8100 CS_STAT1_STAT0BYTE|CS_STAT1_WRITEPROT ??? num blocks:0
+out_chan
+start
+go
+Status of read: 
+...
+----------------------
+disk
+wd: read8 00cc000b returning readInpReg 00 (PC:000112ac)
+WARNING wd: write8 c5 to 00cc0007 (assume controller disable) (PC:00003e60)
+ERROR wd: read8 00cc0007 unknown wd register (PC:00003e60)
+WARNING wd: write8 02 to 00cc0007 (assume controller disable) (PC:00003ece) 	-> command ??
+ERROR wd: read8 00cc0007 unknown wd register (PC:00003ed8)
+00003ed8 10 28 00 07               move.b  ($7,A0), D0                 
+00003edc 0c 00 00 02               cmpi.b  #$2, D0  
+wd: write8 01 to 00cc0008 (host write reg) (PC:00003eec)
+wd: write8 01 to 00cc0008 (host write reg) (PC:00003ef4)
+wd: read8 00cc000b returning readInpReg 01 (PC:00003efc)
+wd: write8 02 to 00cc0008 (host write reg) (PC:00003eec)
+wd: write8 02 to 00cc0008 (host write reg) (PC:00003ef4)
+wd: read8 00cc000b returning readInpReg 02 (PC:00003efc)
+wd: write8 04 to 00cc0008 (host write reg) (PC:00003eec)
+wd: write8 04 to 00cc0008 (host write reg) (PC:00003ef4)
+wd: read8 00cc000b returning readInpReg 04 (PC:00003efc)
+wd: write8 08 to 00cc0008 (host write reg) (PC:00003eec)
+wd: write8 08 to 00cc0008 (host write reg) (PC:00003ef4)
+wd: read8 00cc000b returning readInpReg 08 (PC:00003efc)
+wd: write8 10 to 00cc0008 (host write reg) (PC:00003eec)
+wd: write8 10 to 00cc0008 (host write reg) (PC:00003ef4)
+wd: read8 00cc000b returning readInpReg 10 (PC:00003efc)
+
+-------------------------
+wd test 5
+Test 5  -->  Null status
+WARNING wd: write8 00 to 00cc0007 (assume controller disable) (PC:000073f2)
+wd: read8 00cc0009 returning statusReg 00 (PC:00004f30)
+WARNING wd: write8 03 to 00cc0007 (assume controller disable) (PC:0000506a)
+00005070 10 2c 00 09               move.b  ($9,A4), D0                 ; read status reg
+<dbg>reg
+A0: 00000000 A1:0000ac00 A2:0000504c A3:00000000 A4:00cc0000 A5:00000000 A6:00000000 A7:00014c6e
+D0: 00000000 D1:00000000 D2:00000000 D3:00000000 D4:00000005 D5:00000000 D6:00000000 D7:00000000
+VBR:00000000 PC: 00005070 SR:00002000 sxnzvc
+wd: read8 00cc0009 returning statusReg 00 (PC:0000506a)
+00005074 08 00 00 04               btst    #$4, D0                     ; expects bit 4=1 (Scsi in reset phase)
+ 
+------------------------------
+START: Controller Testing...WDC : 00     Board address : CC0000
+Test 6  -->  Test mode DMA
+WARNING wd: write8 00  to 00cc0007 (PC:000073f2 clr.b   ($7,A4))
+wd: read8 00cc0009 returning statusReg 02 [OEMPTY+] (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+wd: write8 ff to 00cc0003 (DMA L), dmaReg:ff010000 (PC:00005e70 move.b  D0, (A4,D1.w))
+wd: write8 ff to 00cc0002 (DMA M), dmaReg:ff010000 (PC:00005e70 move.b  D0, (A4,D1.w))
+wd: write8 fe to 00cc0001 (DMA H), dmaReg:ff010000 (PC:00005e70 move.b  D0, (A4,D1.w))
+wd: write8 01 to 00cc000a (selected reg) ctlReg2:01 (PC:00004f9a move.b  $34ec.w, ($a,A4))
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00004f68 move.b  ($9,A4), D0)
+WARNING wd: write8 03 [SSRST+ LED+] to 00cc0007 (PC:0000506a move.b  $34ee.w, ($7,A4))
+wd: write8 03 to 00cc0007 (R/W Ctrl Reg) statusReg: d2 (PC:0000506a move.b  $34ee.w, ($7,A4))
+wd: read8 00cc0009 returning statusReg d2 [OEMPTY+ SRES+ SBUSY+ SCMD+] (ctlReg2: 03) (PC:00005070 move.b  ($9,A4), D0)
+wd: end of command 00 (PC:00005262 bgt     $5260)
+WARNING wd: write8 00  to 00cc0007 (PC:0000507e clr.b   ($7,A4))
+wd: write8 d2 to 00cc0008 (host write reg) idx:0 (PC:00005086 move.b  D0, ($8,A4))
+wd: read8 00cc000b returning readInpReg 00 (PC:0000508a move.b  ($b,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:0000508e move.b  ($b,A4), D0)
+wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00005092 move.b  ($9,A4), D0)
+WARNING wd: write8 08 [DMA+] to 00cc0007 (PC:00005c38 move.b  #$8, ($7,A4))
+wd: write8 00 to 00cc0008 (host write reg) idx:1 (PC:00005c42 move.b  #$0, ($8,A4))
+wd: write8 DMA-Test, read 0000 from 00020000 (PC:00005c42 move.b  #$0, ($8,A4))
+wd: end of command 04 (PC:00005260 subq.l  #1, D0)
+wd: end of command 05 (PC:00005260 subq.l  #1, D0)
+WARNING wd: write8 00  to 00cc0007 (PC:00005c50 move.b  #$0, ($7,A4))
+wd: read8 00cc000b returning dmaTest (H) 00 (PC:00005c5a move.b  ($b,A4), D1)
+wd: read8 00cc000b returning readInpReg 00 (PC:00005c5a move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 02 [OEMPTY+] (ctlReg2: 00) (PC:00005c62 move.b  ($9,A4), D0)
+wd: write8 00 to 00cc0008 (host write reg) idx:2 (PC:00005c9a move.b  #$0, ($8,A4))
+wd: read8 00cc000b returning dmaTest (L) 00 (PC:00005ca4 move.b  ($b,A4), D1)
+wd: read8 00cc000b returning readInpReg 00 (PC:00005ca4 move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00005cac move.b  ($9,A4), D0)
+WARNING wd: write8 08 [DMA+] to 00cc0007 (PC:00005c38 move.b  #$8, ($7,A4))
+wd: write8 00 to 00cc0008 (host write reg) idx:3 (PC:00005c42 move.b  #$0, ($8,A4))
+wd: write8 DMA-Test, read 0000 from 00020002 (PC:00005c42 move.b  #$0, ($8,A4))
+wd: end of command 04 (PC:00005262 bgt     $5260)
+wd: end of command 05 (PC:00005262 bgt     $5260)
+WARNING wd: write8 00  to 00cc0007 (PC:00005c50 move.b  #$0, ($7,A4))
+wd: read8 00cc000b returning dmaTest (H) 00 (PC:00005c5a move.b  ($b,A4), D1)
+--------------------
+test13
+WARNING wd: write8 00  to 00cc0007 (PC:000073f2 clr.b   ($7,A4))
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+-------------
+Test 13 -->  Sense Command
+	WARNING wd: write8 00  to 00cc0007 (PC:000073f2 clr.b   ($7,A4))
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+	WARNING wd: read8 00cc0007 returning control reg2 00  (PC:00004c8a andi.b  #$f6, ($7,A4))
+	WARNING wd: write8 00  to 00cc0007 (PC:00004c8a andi.b  #$f6, ($7,A4))
+	WARNING wd: write8 00  to 00cc0007 (PC:00004c96 clr.b   ($7,A4))
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:00004f4c move.b  ($9,A4), D0)
+	WARNING wd: write8 03 [SSRST+ LED+] to 00cc0007 (PC:0000506a move.b  $34ee.w, ($7,A4))
+	wd: write8 03 to 00cc0007 (R/W Ctrl Reg) statusReg: 92 (PC:0000506a move.b  $34ee.w, ($7,A4))
+	wd: read8 00cc0009 returning statusReg 92 [OEMPTY+ SRES+ SCMD+] (ctlReg2: 03) (PC:00005070 move.b  ($9,A4), D0)
+	wd: end of command 00 (PC:00005262 bgt     $5260)
+	WARNING wd: write8 00  to 00cc0007 (PC:0000507e clr.b   ($7,A4))
+??	wd: write8 92 to 00cc0008 (host write reg) idx:0 (PC:00005086 move.b  D0, ($8,A4))
+	wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00005092 move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+	wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00004f4c move.b  ($9,A4), D0)
+	sel   wd: write8 01 to 00cc000a (selected reg) ctlReg2:01 (PC:00004f9a move.b  $34ec.w, ($a,A4))
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00004f68 move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+00	wd: write8 03 to 00cc0008 (host write reg) idx:0 (PC:00005536 move.b  (A0)+, ($8,A4))
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: end of command 04 (PC:0000546a subq.l  #1, D4)
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+01	wd: write8 00 to 00cc0008 (host write reg) idx:1 (PC:00005536 move.b  (A0)+, ($8,A4))
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: end of command 04 (PC:00005464 btst    #$1, D0)
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+02	wd: write8 00 to 00cc0008 (host write reg) idx:2 (PC:00005536 move.b  (A0)+, ($8,A4))
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: end of command 04 (PC:0000545e btst    #$7, D0)
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+03	wd: write8 00 to 00cc0008 (host write reg) idx:3 (PC:00005536 move.b  (A0)+, ($8,A4))
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: end of command 04 (PC:00005458 clr.l   D0)
+04	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: write8 04 to 00cc0008 (host write reg) idx:4 (PC:00005536 move.b  (A0)+, ($8,A4))
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+	wd: end of command 04 (PC:0000546a subq.l  #1, D4)
+	wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+05	wd: write8 00 to 00cc0008 (host write reg) idx:5 (PC:00005536 move.b  (A0)+, ($8,A4))
+	WARNING wd: write8 00  to 00cc0007 (PC:00004e1a clr.b   ($7,A4))
+LED off	WARNING wd: read8 00cc0007 returning control reg2 00  (PC:00004e5e bclr    #$1, ($7,A4))
+	WARNING wd: write8 00  to 00cc0007 (PC:00004e5e bclr    #$1, ($7,A4))
+	wd: end of command 04 (PC:00005568 movea.l $3438.w, A1)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+	wd: end of command 05 (PC:0000558a subq.l  #1, D2)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+	wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 82 [OEMPTY+ SCMD+] (ctlReg2: 00) (PC:0000558e move.b  ($9,A4), D0)
+-------
+test 12
+START: Controller Testing...WDC : 00     Board address : CC0000
+Test 12 -->  Handshake
+WARNING wd: write8 00  to 00cc0007 (PC:000073f2 clr.b   ($7,A4))
+wd: read8 00cc0009 returning statusReg 08 [INPFULL+] (ctlReg2: 00) (PC:00004f30 btst    #$6, ($9,A4))
+WARNING wd: write8 03 [SSRST+ LED+] to 00cc0007 (PC:0000506a move.b  $34ee.w, ($7,A4))
+wd: write8 03 to 00cc0007 (R/W Ctrl Reg) statusReg: 18 (PC:0000506a move.b  $34ee.w, ($7,A4))
+wd: read8 00cc0009 returning statusReg 18 [INPFULL+ SRES+] (ctlReg2: 03) (PC:00005070 move.b  ($9,A4), D0)
+wd: end of command 00 (PC:00005260 subq.l  #1, D0)
+WARNING wd: write8 00  to 00cc0007 (PC:0000507e clr.b   ($7,A4))
+wd: write8 18 to 00cc0008 (host write reg) idx:0 (PC:00005086 move.b  D0, ($8,A4))
+wd: read8 00cc000b returning readInpReg 00 (PC:0000508a move.b  ($b,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:0000508e move.b  ($b,A4), D0)
+wd: read8 00cc0009 returning statusReg 00  (ctlReg2: 00) (PC:00005092 move.b  ($9,A4), D0)
+wd: write8 01 to 00cc000a (selected reg) ctlReg2:01 (PC:00004f9a move.b  $34ec.w, ($a,A4))
+wd: end of command 04 (PC:00005262 bgt     $5260)
+wd: end of command 05 (PC:00005262 bgt     $5260)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00004f68 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 03 to 00cc0008 (host write reg) idx:0 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: end of command 04 (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 00 to 00cc0008 (host write reg) idx:1 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: end of command 04 (PC:00005462 beq     $546e)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 00 to 00cc0008 (host write reg) idx:2 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: end of command 04 (PC:00005468 bne     $547c)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 00 to 00cc0008 (host write reg) idx:3 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: end of command 04 (PC:0000546c bgt     $5458)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 04 to 00cc0008 (host write reg) idx:4 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: end of command 04 (PC:0000545a move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:0000545a move.b  ($9,A4), D0)
+wd: write8 00 to 00cc0008 (host write reg) idx:5 (PC:00007bba move.b  (A0)+, ($8,A4))
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007bc0 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c0 [SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: end of command 04 (PC:00007bee bgt     $7be2)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: end of command 05 (PC:00007bee bgt     $7be2)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg e2 [OEMPTY+ SMSG+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: Executing scsi command 03 unit 0 (03 00 00 00 04 00 00 00 00 00) (PC:00007bee bgt     $7be2)
+wd: read8 00cc0009 returning statusReg cc [COMPLETE+ INPFULL+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 48 [INPFULL+ SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:00007bf8 move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007bfe move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: end of command 06 (PC:00007bea beq     $7bf4)
+wd: read8 00cc0009 returning statusReg 48 [INPFULL+ SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:00007bf8 move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007bfe move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: end of command 06 (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 48 [INPFULL+ SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:00007bf8 move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007bfe move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: end of command 06 (PC:00007bec subq.l  #1, D1)
+wd: read8 00cc0009 returning statusReg 48 [INPFULL+ SBUSY+] (ctlReg2: 01) (PC:00007be2 move.b  ($9,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:00007bf8 move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007bfe move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 40 [SBUSY+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: end of command 06 (PC:00007c1a cmp.b   $3513.w, D0)
+wd: read8 00cc0009 returning statusReg cc [COMPLETE+ INPFULL+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007c16 move.b  ($9,A4), D0)
+wd: read8 00cc000b returning readInpReg 00 (PC:00007c2a move.b  ($b,A4), D1)
+wd: read8 00cc0009 returning statusReg c2 [OEMPTY+ SBUSY+ SCMD+] (ctlReg2: 01) (PC:00007c44 move.b  ($9,A4), D0)
+wd: read8 00cc0009 returning statusReg 48 [INPFULL+ SBUSY+] (ctlReg2: 01) (PC:00007c44 move.b  ($9,A4), D0)
+---
+
+test 12
+after read of input regs:
+cc (WD_STAT_SCMD|WD_STAT_SBUSY  |  WD_STAT_INPFULL|WD_STAT_OPCOMP)
+ readInpReg
+e8 (WD_STAT_SCMD|WD_STAT_SBUSY|WD_STAT_OUTEMPTY   |  WD_STAT_INPFULL)
+ readInpReg
+00
+
+

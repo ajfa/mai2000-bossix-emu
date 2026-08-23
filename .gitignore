@@ -1,0 +1,11 @@
+obj/
+dep/
+eagleemu
+*.o
+*.d
+build.log
+media/
+wd0*.img
+ram.bin
+*.orig
+*~
