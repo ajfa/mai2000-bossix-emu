@@ -93,6 +93,13 @@ because the disk was imaged from a machine that was running. Press return when
 it offers the automatic check and repair; it repairs, halts cleanly, and after
 a reboot comes up clean.
 
+### Multi user mode
+
+`CTRL+D` at `ADMIN>` and answer `multi`. The system starts its update and
+errlog processes, paints the MAI BASIC FOUR banner and offers a login: press
+ESC, then answer `admin` at `Account name:`. `shutdown 0` counts fifteen
+seconds down, prints GOODBYE and returns to single user mode.
+
 ### Shutting down
 
 BOSS/IX marks its filesystems dirty while mounted, so quit in this order:
@@ -101,6 +108,10 @@ BOSS/IX marks its filesystems dirty while mounted, so quit in this order:
 2. answer `shutdown` to `single, multi, shutdown?`
 3. wait for `System shutdown.  Please reboot...`
 4. `CTRL+X` for the emulator debugger, then `quit`
+
+If you break into the debugger while BOSS/IX is idle it reports the CPU as
+stopped waiting for an interrupt. That is the kernel's idle instruction, not a
+hang.
 
 ## Emulator commands
 
@@ -118,13 +129,19 @@ BOSS/IX marks its filesystems dirty while mounted, so quit in this order:
 
 ## State of the machine
 
-Single user works: shell, filesystem, Business Basic, disk read and write.
-Multi user does not yet. `/etc/sys.log` shows why: this system had its terminals
-on 4-Way serial boards, and although the boards now initialise, take command
-blocks and raise completion interrupts, the driver still rejects the
-transmission characteristics it tries to set on those ports. The 4-Way protocol
-as read out of the service manual, and what the machine actually does with it,
-are written up in NOTES.md for whoever picks it up.
+Single user and multi user both work: shell, filesystem, Business Basic, disk
+read and write, login, and a clean `shutdown`. The clock runs, where it used to
+stand still.
+
+What is left is written up at the end of NOTES.md. The short version: the
+parallel printer devices `/dev/lp` and `/dev/p1` do not open, which is what the
+startup notice in `/etc/sys.log` is complaining about; only the console has a
+real endpoint, so the extra 4-Way terminal ports carry the login banner but have
+nowhere to appear; and device time is paced by the run loop rather than by a
+crystal, so the emulated clock gains while the machine is idle.
+
+The 4-Way protocol as read out of the service manual, and the several places
+where the machine turned out not to follow it, are in NOTES.md.
 
 ## Credits and licence
 
