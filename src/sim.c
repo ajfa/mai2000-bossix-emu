@@ -586,20 +586,63 @@ void sys_instr_hook (device_t * device, unsigned int pc) {
  * every iteration instead; m68k_execute returns immediately while stopped, so
  * the loop keeps spinning and time keeps passing, which is what a crystal
  * driven 68230 does on the real board. */
+/* Counting instructions was wrong twice over. While the CPU spins in stop
+ * #$2000 there are no instructions to count, so the loop pulsed the 68230 at
+ * whatever rate the host could spin: measured at 6.31 times real time, and at
+ * a hundred per cent of a core, which on a small virtual machine leaves
+ * nothing for the console and makes typing lag. The 68230 on the real board is
+ * driven by a crystal, so drive it from the host clock instead. */
+/* One 68230 count, in nanoseconds. Calibrated by running the machine idle for
+ * a minute and comparing its date against the host clock; see NOTES.md. */
+#ifndef PIT_PERIOD_NS
+#define PIT_PERIOD_NS	500
+#endif
+#define PIT_RESYNC_NS	20000000L	/* never make up more than 20 ms in one go */
+
+static long long host_ns (void) {
+	struct timespec ts;
+	clock_gettime (CLOCK_MONOTONIC, &ts);
+	return (long long)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+}
+
+static long long pitDue = 0;
+
 void sys_device_tick (void) {
-	timerInstrCount++;
-	if (timerInstrCount == 4) {
-		pit_pulse_counter();
-		timerInstrCount = 0;
+	long long now;
+	int idle = m68k_is_stopped();
+
+	if (idle) {
+		/* Nothing to execute until an interrupt arrives, so give the core
+		 * back to the host rather than spinning on it. Keep the pause short:
+		 * the disk controller is serviced from this same loop, and the kernel
+		 * waits for it stopped, so a long pause here is a slow boot. */
+		usleep (100);
 	}
-    wdInstrCount++;
-	if (wdInstrCount == 20) {
+
+	/* Reading the host clock costs more than emulating the instruction does,
+	 * so only look while idle, where we just slept anyway, or every so many
+	 * instructions while running. */
+	timerInstrCount++;
+	if (idle || timerInstrCount >= 64) {
+		timerInstrCount = 0;
+		now = host_ns();
+		if (!pitDue || now - pitDue > PIT_RESYNC_NS) pitDue = now;
+		while (pitDue <= now) {
+			pit_pulse_counter();
+			pitDue += PIT_PERIOD_NS;
+		}
+	}
+	/* One idle pass stands for the instructions the CPU would have executed in
+	 * that time, so the disk keeps its cadence instead of stalling. */
+    wdInstrCount += idle ? 20 : 1;
+	if (wdInstrCount >= 20) {
 		wd_processContinue();
         cs_processContinue();
 		wdInstrCount = 0;
 	}
 	if (fdInstrCount) {
-		fdInstrCount--;
+		int step = idle ? 20 : 1;
+		fdInstrCount -= (fdInstrCount > step) ? step : fdInstrCount;
 		if (fdInstrCount == 0) fd_processContinue();
 	}
 }
@@ -1425,7 +1468,10 @@ void dbgCmd_rm (int numArgs, struct args_t *args) {
 	kb_raw();
 	do {
 		pollCount--;
-		if (!(pollCount)) {
+		/* The poll counter measures instructions, and a stopped CPU executes
+		 * none, so without the second test the console would go deaf exactly
+		 * while the kernel sits idle waiting for a keystroke. */
+		if (!(pollCount) || m68k_is_stopped()) {
 			pollCount = SCC_POLL_INSTRUCTIONS;
 			pollBoardStatus();
 		}
@@ -1462,7 +1508,10 @@ void dbgCmd_go (int numArgs, struct args_t *args) {
 	kb_raw();
 	do {
 		pollCount--;
-		if (!(pollCount)) {
+		/* The poll counter measures instructions, and a stopped CPU executes
+		 * none, so without the second test the console would go deaf exactly
+		 * while the kernel sits idle waiting for a keystroke. */
+		if (!(pollCount) || m68k_is_stopped()) {
 			pollCount = SCC_POLL_INSTRUCTIONS;
 			pollBoardStatus();
 		}
