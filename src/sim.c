@@ -575,8 +575,18 @@ void sys_instr_hook (device_t * device, unsigned int pc) {
 	if (pcHistoryCount < PCHISTORY_SIZE) pcHistoryCount++;
 
 	if (trapTrace) sys_trace_traps(pc);
+}
 
-	/* totally wrong timing */
+/* Device time. This used to live in the instruction hook, which stops being
+ * called the moment the CPU executes STOP, because a stopped CPU executes no
+ * instructions. BOSS/IX idles in stop #$2000 waiting for the timer tick, so
+ * the timer only advanced while the machine was busy and froze the moment it
+ * went idle: date stood still, shutdown's countdown hung at its first line,
+ * and every timeout in the kernel waited forever. The run loops call this on
+ * every iteration instead; m68k_execute returns immediately while stopped, so
+ * the loop keeps spinning and time keeps passing, which is what a crystal
+ * driven 68230 does on the real board. */
+void sys_device_tick (void) {
 	timerInstrCount++;
 	if (timerInstrCount == 4) {
 		pit_pulse_counter();
@@ -1373,10 +1383,14 @@ void dbgCmd_step (int numArgs, struct args_t *args) {
 	pc = m68k_get_reg(NULL, M68K_REG_PC);
     if (pc != prevShownPC) showInstruction(pc,"");
 	if (numArgs > 0) instrCount = args[0].value;
+	if (m68k_is_stopped())
+		printf("CPU is stopped (a STOP instruction executed), waiting for an interrupt;\n"
+		       "stepping passes time but executes nothing until one arrives.\n");
 	for (i=0; i<instrCount; i++) {
 		pollBoardStatus();
 		for (j=0; j<NUMREGS;j++) regsBefore[j]=m68k_get_reg(NULL, j);
 		m68k_execute(1);
+		sys_device_tick();
 		pc = m68k_get_reg(NULL, M68K_REG_PC);
 		for (j=0; j<NUMREGS;j++) regsAfter[j]=m68k_get_reg(NULL, j);
 		changedRegs[0]=0;
@@ -1417,6 +1431,7 @@ void dbgCmd_rm (int numArgs, struct args_t *args) {
 		}
 		g_currPC = m68k_get_reg(NULL, M68K_REG_PC); /* REG_PPC does not work */
 		m68k_execute(1);
+		sys_device_tick();
 		pc = m68k_get_reg(NULL, M68K_REG_PC);
 	} while ((numMsgs < maxMsgs) && (!(brkpt = breakpointReached (pc))) && (!(g_ctrlCpressed)));
 	kb_normal();
@@ -1427,6 +1442,8 @@ void dbgCmd_rm (int numArgs, struct args_t *args) {
 	if (g_ctrlCpressed) {
 		printf("break due to ctrl c\n");
 		g_ctrlCpressed = 0;
+		if (m68k_is_stopped())
+			printf("CPU is stopped (a STOP instruction executed), waiting for an interrupt.\n");
 	} else
 		if (brkpt) printf("breakpoint %d @ %08x\n",brkpt-1,breakpoints[brkpt-1].addr);
 	showInstruction(g_currPC,"");
@@ -1451,6 +1468,7 @@ void dbgCmd_go (int numArgs, struct args_t *args) {
 		}
 		g_currPC = m68k_get_reg(NULL, M68K_REG_PC); /* REG_PPC does not work */
 		m68k_execute(1);
+		sys_device_tick();
 		pc = m68k_get_reg(NULL, M68K_REG_PC);
         brkpt = breakpointReached (pc);
 	} while ( (brkpt == 0) && (!(g_ctrlCpressed)));

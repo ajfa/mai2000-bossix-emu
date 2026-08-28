@@ -113,6 +113,13 @@ void pitSetReg(int regNo, int value) {
 	switch (regNo) {
 		case TCR:	if ( (!(pit_regs[TCR] & 0x01)) && (value & 0x01)) {	/* switched on ? */
 						pit_regs[TCR] = value & 0xf7; /* bit3 always 0 */
+						/* enabling the timer loads the counter from the preload
+						 * register (68230, zero detect control = 0). Without
+						 * this the kernel inherited whatever the boot PROM
+						 * left behind, and the PROM's last test ran in
+						 * rollover mode, so the counter sat at sixteen
+						 * million and the first kernel tick was hours away. */
+						if (!(value & 0x10)) counterValue = counterPreloadValue;
 						pit_check_interrupt();
 					} else
 						pit_regs[TCR] = value & 0xf7; /* bit3 always 0 */ 

@@ -28,9 +28,14 @@
  * da0000 and dc0000 exactly once and gives up on a bus error. So the boards sit
  * every 0x20000 starting at d20000, which makes the controller ID in the
  * manual's "D(x)A000" notation 2, 4, 6, 8, A and C. */
-#define FW_BASE_FIRST       0x00d20000
+/* Corrected by Armin Diehl against the real machine: the first 4-Way lives at
+ * d40000, not d20000. The kernel does probe d20000 as well, but that slot
+ * belongs to something else. With the boards at d4/d6 the boot PROM reports
+ * fw [modules= 0,1], the FWAY diagnostic finds boards 0 and 1, and the tty
+ * ports 4..7 configure without errors. */
+#define FW_BASE_FIRST       0x00d40000
 #define FW_BASE_STEP        0x00020000
-#define FW_MAX              6
+#define FW_MAX              5
 #define FW_ADDR_MASK        0x00ff0000
 
 /* how many boards answer. The configuration record on the reference disk

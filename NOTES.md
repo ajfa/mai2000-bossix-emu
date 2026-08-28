@@ -377,22 +377,81 @@ The conclusion drawn from it, that the console did not live on the SCC, was
 wrong. The console lives on SCC port A at 19200 baud, terminal type `edt`,
 exactly what `sysinfo` reports.
 
+### 19. fourway.h, the base address, corrected by Armin Diehl
+
+Armin tested the fork against his knowledge of the real machine and found the
+boards mapped one slot too low: the first 4-Way lives at `0xd40000`, not
+`0xd20000`. The kernel does probe `0xd20000` as well, which is what misled the
+original measurement, but that slot belongs to something else. With the boards
+at `0xd4`/`0xd6` the self test reports `fw [modules= 0,1]`, the FWAY diagnostic
+finds boards 0 and 1, and the startup errors for ports 4 to 7 disappear.
+
+### 20. sim.c and pit.c, time stood still whenever the machine was idle
+
+Reported by Armin as "the real time clock does not yet work": `date` always
+returned the boot time and `shutdown 0` printed its warning and hung at the
+first line of the countdown.
+
+Two causes, stacked:
+
+* Device time, the 68230 pulse included, was advanced from the instruction
+  hook, and a CPU that has executed `stop #$2000` executes no instructions, so
+  the hook never ran while the kernel idled. Time only passed while the machine
+  was busy, which is exactly backwards for a clock. The device tick now lives
+  in the run loops, which keep spinning while the CPU is stopped, the way a
+  crystal keeps oscillating on the real board.
+* Enabling the timer now loads the counter from the preload register, per the
+  68230 with zero detect control clear. Without that the kernel inherited the
+  counter as the boot PROM left it, and the PROM's last self test ran in
+  rollover mode, so the kernel's first tick was sixteen million pulses away.
+
+With both in, `date` advances, and from multi user mode `shutdown 0` counts 15
+down to 1, prints GOODBYE, kills its children and returns to single user.
+
+### 21. Multi user mode works
+
+With the 4-Way base right and the clock running: Ctrl-D at `ADMIN>`, answer
+`multi`, and the system starts its update and errlog processes and paints the
+MAI BASIC FOUR login banner on the configured terminals. ESC at the banner,
+`admin` at `Account name:`, and you are logged in.
+
+### 22. cs.c, command 8001, whose original guess was right
+
+`trestore dev=cs` hung the machine. Three things combined: the streamer's
+command `0x8001` was unimplemented, the code that would have handled it sat
+commented out with the note "Assume Chain addr reset", and every kernel timeout
+that would have rescued the situation was frozen along with the clock. The
+trace shows the kernel sending `0x8001` immediately after handing over the IOPB
+address, which is precisely arming the chain at its first block, so the
+original commented out guess was correct and is now live. With the clock fix on
+top, `trestore` reads the tape, identifies the saveset and returns to the
+prompt.
+
+### 23. The debugger now says when the CPU is stopped
+
+Single stepping at the idle point shows the same PC forever, which looks like a
+stepping bug and is not one: the PC points at the instruction after
+`stop #$2000` and the CPU is in the stopped state, executing nothing until an
+interrupt above the mask arrives. Both the step command and the Ctrl-X break-in
+now print `CPU is stopped (a STOP instruction executed), waiting for an
+interrupt` so the state is visible instead of puzzling. Stepping also advances
+device time now, so a determined `s 200000` really would wake the machine.
+
 ## What is still missing
 
-**Multi user operation.** `/etc/sys.log` records the startup errors that keep
-the system in single user mode: `/etc/start` cannot open `/dev/p1`, port 3, and
-cannot set transmission characteristics `FF2001` for `/dev/tty6`, `tty2`,
-`tty8` and `tty9`, ports 7 through 10, which live on the 4-Way boards. The
-Configure plumbing reports success but something in the CONF exchange does not
-satisfy the driver yet. Getting one 4-Way port to carry a login terminal is the
-next milestone; the protocol notes below are the map.
+Multi user now works, so the frontier has moved:
 
-**Smaller loose ends.** The parallel printer devices `/dev/lp` and `/dev/p1`
-do not open, error -5. Reads of `0x006c0000`, the NVRAM recall strobe, are
-unhandled. `wd [modules= 0]` in the self test never becomes 1. The MMU execute
-attribute is unimplemented. The `edt` console is plain enough for the shell and
-Business Basic, but full screen programs will want the terminal type's escape
-sequences honoured by whatever real terminal is attached.
+* The parallel printer devices `/dev/lp` and `/dev/p1` do not open, error -5.
+* The 4-Way data path carries the login banner and keyboard input for the
+  configured terminals, but only the console has a real endpoint; wiring the
+  other ports to pseudo terminals or sockets would make the extra logins
+  reachable.
+* Reads of `0x006c0000`, the NVRAM recall strobe, are unhandled. `wd
+  [modules= 0]` in the self test never becomes 1. The MMU execute attribute is
+  unimplemented.
+* Device time advances with the run loop rather than with a crystal, so the
+  emulated clock runs fast when the machine is idle. Correct behaviour would
+  pace the 68230 against host time.
 
 ## Superseded, kept so nobody repeats it
 

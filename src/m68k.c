@@ -195,6 +195,13 @@ void m68k_pulse_interrupt (int level) {
    which is how the real hardware behaves. */
 void set_irq_line(m68ki_cpu_core *m68k, int irqline, int state);
 
+/* True while the CPU sits in the state a STOP instruction put it in. It will
+   not execute anything until an interrupt above the mask arrives, so a single
+   step has, correctly, nothing to do. */
+int m68k_is_stopped (void) {
+	return (m68k_cpu.stopped != 0);
+}
+
 void m68k_set_int_line (int level, int state) {
 	set_irq_line(&m68k_cpu,level,state);
 }

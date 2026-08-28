@@ -163,6 +163,7 @@ void m68k_set_instr_callback(void  (*callback)(device_t * device, unsigned int p
 
 void m68k_pulse_interrupt (int level);
 void m68k_set_int_line (int level, int state);
+int  m68k_is_stopped (void);
 
 int cpu_save_state(FILE * f);
 int cpu_load_state(FILE * f);

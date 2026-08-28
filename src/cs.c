@@ -599,9 +599,13 @@ void cs_write_word(unsigned int address, unsigned int value, int flags) {
                                         case 0x8000:    msgout(MSGC_FUNC,MYSELF,MSG_NONE,"Reset controller and drive");
                                                         /* should i reset IOPB ? */
                                                         break;
-                                        /*case 0x8001:    msgout(MSGC_FUNC,MYSELF,MSG_NONE,"reset chain address to %08x (address:%08x)",cs.firstIOPB_addr,cs.firstIOPB_addr << 1);
+                                        case 0x8001:    /* seen from BOSS/IX trestore: sent right
+                                                           after the IOPB address handover, so it arms
+                                                           the chain at its first block, which is what
+                                                           the original commented out guess said */
+                                                        msgout(MSGC_FUNC,MYSELF,MSG_NONE,"reset chain address to %08x (address:%08x)",cs.firstIOPB_addr,cs.firstIOPB_addr << 1);
                                                         cs.IOPB_addr = cs.firstIOPB_addr;
-                                                        break;*/
+                                                        break;
                                         case 0x8002:    msgout(MSGC_FUNC,MYSELF,MSG_NONE,"Reset controller");
                                                         /* must not reset IOPB */
                                                         break;
