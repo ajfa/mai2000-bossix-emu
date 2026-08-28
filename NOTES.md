@@ -446,12 +446,14 @@ Multi user now works, so the frontier has moved:
   configured terminals, but only the console has a real endpoint; wiring the
   other ports to pseudo terminals or sockets would make the extra logins
   reachable.
-* Reads of `0x006c0000`, the NVRAM recall strobe, are unhandled. `wd
-  [modules= 0]` in the self test never becomes 1. The MMU execute attribute is
-  unimplemented.
-* Device time advances with the run loop rather than with a crystal, so the
-  emulated clock runs fast when the machine is idle. Correct behaviour would
-  pace the 68230 against host time.
+* Reads of `0x006c0000`, the NVRAM recall strobe, are unhandled. The MMU
+  execute attribute is unimplemented.
+
+`wd [modules= 0]` in the self test used to be listed here as a defect, on the
+assumption that the field counted something that ought to have reached 1. It
+does not: Armin Diehl points out that it lists the boards present, so
+`[modules= 0]` is the correct output for one disk controller, and a machine
+with two would print `[modules= 0,1]`, exactly as the two 4-Way boards do.
 
 ## Superseded, kept so nobody repeats it
 
