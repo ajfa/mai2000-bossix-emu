@@ -57,15 +57,29 @@ int pollCnt = 0;
  * raises the pending bit when WR1 bit 1 is set. WR0 commands 5, reset TX
  * interrupt pending, and 7, reset highest IUS, clear them. RR3 on channel A
  * reports the pending bits and RR2 on channel B supplies the status modified
- * vector, both of which a Z8530 dispatch handler may read. */
+ * vector, both of which a Z8530 dispatch handler may read.
+ *
+ * A Z8530 has one WR9 for the whole chip, not one per channel, and it does
+ * not drive /INT at all while bit 3, the master interrupt enable, is clear.
+ * The boot PROM relies on that. Its serial self test writes WR1 = 0x17 for
+ * the local loopback pass and then polls RR0 bit 0 instead of taking
+ * interrupts, so it never issues WR0 command 5 to clear the transmit pending
+ * bit it has just raised. With the line asserted from the first loopback
+ * write onwards, the level 5 that follows lands on the PROM's catch-all at
+ * 0x403218, the address its vector table also gives to Divide by Zero and to
+ * every unused trap, and the test dies with "unexpected interrupt" during the
+ * cmb pass. The PROM leaving that vector on the catch-all is the statement
+ * that it expects no level 5 while the test runs. */
 #define SCC_INTNO 5
 
+static int sccWr9 = 0;   /* one per chip, not one per channel */
 static int sccTxPend[2];
 static int sccRxPend[2];
 
 static void scc_update_irq (void) {
     static int asserted = 0;
-    int want = sccTxPend[0] || sccTxPend[1] || sccRxPend[0] || sccRxPend[1];
+    int want = (sccWr9 & 0x08) &&
+               (sccTxPend[0] || sccTxPend[1] || sccRxPend[0] || sccRxPend[1]);
 
     if (want != asserted) {
         asserted = want;
@@ -189,6 +203,11 @@ void scc_cmdWrite (int port, int value) {
 		}
 	}
 	if (!((idx == 0) && (value == 0))) scc[port].wr[idx] = value & 0xff;
+	/* WR9 is shared, so either channel can enable or disable the whole chip */
+	if (idx == 9) {
+		sccWr9 = value & 0xff;
+		scc_update_irq();
+	}
 }
 
 
@@ -547,6 +566,7 @@ void scc_pulse_reset(void) {
 	memset(&scc,0,sizeof(scc));
 	scc[0].rr[0] = 0x04;
 	scc[1].rr[0] = 0x04;
+	sccWr9 = 0;
 	sccTxPend[0] = sccTxPend[1] = 0;
 	sccRxPend[0] = sccRxPend[1] = 0;
 	m68k_set_int_line (SCC_INTNO, 0);
