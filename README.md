@@ -1,18 +1,24 @@
 # MAI 2000 emulator running BOSS/IX
 
-Boots MAI Basic Four's **BOSS/IX 7.5B\*22** to an interactive shell on an
-emulated MAI 2000: Motorola 68010 at 8 MHz, the board's custom segmented MMU,
-Winchester disk, cartridge streamer and Z8530 console. BOSS/IX is Charles River
-Data Systems UNOS licensed by MAI; the kernel in the reference disk image was
-built on 4 January 1991.
+> **Development has moved. Go to
+> [ardiehl/MAI-Basic-Four-System-2000-emulator](https://github.com/ardiehl/MAI-Basic-Four-System-2000-emulator).**
+>
+> Everything in this fork has been merged there, and that repository is now the
+> single place where the emulator is built, fixed and released. Clone that one.
+> This fork stays online as the record of how the machine was brought up, not as
+> something to build.
+
+This tree is the fork in which MAI Basic Four's **BOSS/IX 7.5B\*22** was first
+booted to an interactive shell on an emulated MAI 2000: Motorola 68010 at 8 MHz,
+the board's custom segmented MMU, Winchester disk, cartridge streamer and Z8530
+console. BOSS/IX is Charles River Data Systems UNOS licensed by MAI; the kernel
+in the reference disk image was built on 4 January 1991.
 
 ```
 System name: MAI 2000                         System serial number: 2000-97894
 Operating System: EOS5B22, BOSS/IX release 7.5B*22 (Jan  4 1991 18:22)
 <single user mode>
 
-ADMIN>ls /
-ATP PS bin boot dev doc etc games mnt s10 sys tmp tools usr util
 ADMIN>basic
 Business BASIC level BB90 07.05B*20.01
 
@@ -23,15 +29,31 @@ READY
 >RUN
 ```
 
-## Relationship to the upstream emulator
+## Status
 
-This is a fork of Armin Diehl's
-[MAI-Basic-Four-System-2000-emulator](https://github.com/ardiehl/MAI-Basic-Four-System-2000-emulator),
-which is where the machine, the media, the boot PROM dump and the original
-emulator all come from. Upstream reaches `Executing` and stops there. Eighteen
-changes take it from that point to an interactive operating system. They are
-described in [NOTES.md](NOTES.md), which also records the measurements behind
-each one and several wrong hypotheses, so that nobody has to repeat them.
+The machine is usable, and the work continues upstream rather than here.
+
+What has been measured on the current upstream tree, with a fresh copy of the
+reference disk image on every run:
+
+| | |
+|---|---|
+| single user shell at `ADMIN>` | about six seconds from the boot prompt |
+| filesystem check | no repairs needed, `/etc/sys.log` empty |
+| multi user mode | starts, login as `admin`, `ps` lists the running processes |
+| Business Basic | BB90 runs programs |
+| disk | read and write through the Winchester controller and its DMA engine |
+| firmware self test | passes every stage, `cmb` through `cs` |
+| shutdown | clean, filesystems marked clean |
+| clock | tracks real time, having previously stood still |
+| console typing | about 50 ms per keystroke, and the same on a starved host |
+
+## What was wrong, and where it is written down
+
+Upstream reached `Executing` and stopped. The changes that take it from there to
+an interactive operating system are described in [NOTES.md](NOTES.md), which
+also records the measurement behind each one and several hypotheses that turned
+out to be wrong, so that nobody has to spend time on them again.
 
 The short version of what was missing:
 
@@ -41,114 +63,81 @@ The short version of what was missing:
 * the timer was modelled as an edge and forced exceptions past the interrupt
   mask, instead of asserting a level
 * the disk raised its completion interrupt too late for a sleeping driver
-* the cartridge streamer threw away the upper half of its command block
-  address and wrote controller status over kernel text
+* the cartridge streamer threw away the upper half of its command block address
+  and wrote controller status over kernel text
 * the CMB status registers read back as every fault on the board at once
-* **the SCC had no interrupts**, which is why the console stayed silent: the
-  console driver enables the transmit interrupt, queues a byte and sleeps
+* the SCC had no interrupts, which is why the console stayed silent: the console
+  driver enables the transmit interrupt, queues a byte and sleeps
+* the SCC drove its interrupt line with the chip's master interrupt enable
+  clear, which killed the firmware self test on an unhandled level 5
 
-Three debugging facilities were added along the way and are useful in their own
+Three debugging facilities came out of the work and are useful in their own
 right: write watchpoints, a ring of recently executed program counters, and a
-system call tracer that decodes BOSS/IX's `TRAP #2` convention.
+system call tracer that decodes the BOSS/IX `TRAP #2` convention.
 
-## Building
+## Open items
 
-Needs a C compiler, make and readline.
+Tracked upstream, listed here so that a reader arriving at this fork knows what
+is and is not solved. Nothing on this list is being worked on in this
+repository.
 
-```
-sudo apt-get install -y gcc make libreadline-dev    # Debian, Ubuntu
-make
-```
+**Blocking other work**
 
-## Getting the operating system
+* The checksum of the encrypted configuration record. The kernel reads it from a
+  fixed block and refuses to boot when it does not match the serial number held
+  in NVRAM. Until it can be recomputed, the machine cannot be reconfigured for
+  its full memory, a second Winchester controller, or a floppy drive usable
+  outside the boot partition.
 
-The BOSS/IX media is MAI Basic Four software and is not redistributed here. It
-is published on the collector's site, and `fetch-media.sh` downloads it and
-builds a bootable disk:
+**Machine and media**
 
-```
-./fetch-media.sh
-```
+* Second Winchester controller, and a disk image carrying the field diagnostics.
+* Floppy support beyond the boot partition, which depends on the record above.
+* Any newly published disk image needs the previous owner's business records
+  removed from it first, while leaving the Basic programs runnable.
 
-That fetches a raw saveset of a working system disk and the encrypted
-configuration record for its serial number, which BOSS/IX will not boot
-without, and assembles `wd0.img`.
+**Serial and terminals**
 
-## Running
+* The 4-Way controller needs character input, reset and its register set, so
+  that the extra terminal ports have somewhere to appear. The login banner
+  already reaches them.
+* Outgoing key translation for the MAI keyboard, including the MB function keys
+  and backspace, which BOSS/IX expects as `^H` while it treats `0x7f` as line
+  kill.
+* Serial ports and local sockets as endpoints.
 
-```
-./eagleemu "msg all -" "bus -" "dev wd image wd0.img" g
-```
+**Toolchain**
 
-It needs a real terminal: the emulator puts stdin into raw mode and echoes the
-emulated serial console to stderr, so redirecting stdin makes a working boot
-look like a hang.
+* Whether the on-disk assembler runs. That answer decides everything after it.
+* A linker, C compiler, libraries and headers that match this release rather
+  than a later UNOS.
+* Failing that, the object file format, and whether an old binutils can target
+  it.
+* Finishing the installation tape, and whether a utility compiled for the 68020
+  can be patched to run here.
+* Identifying the filesystem, which may be close to System V.
 
-At the firmware prompts answer `wd0` to `Boot device:` and press return at
-`System file:`. Press return at the clock prompt and ESC at the startup notice,
-and you are at `ADMIN>`.
+## Notes for anyone reading the code
 
-The very first boot of a freshly built image finds the filesystem mounted,
-because the disk was imaged from a machine that was running. Press return when
-it offers the automatic check and repair; it repairs, halts cleanly, and after
-a reboot comes up clean.
+Two mistakes are easy to make in this emulator and both cost real time.
 
-### Multi user mode
+Interrupts must not be paced by counting instructions. A 68000 sitting in `stop`
+executes none, so a counter never advances and the interrupt never arrives.
 
-`CTRL+D` at `ADMIN>` and answer `multi`. The system starts its update and
-errlog processes, paints the MAI BASIC FOUR banner and offers a login: press
-ESC, then answer `admin` at `Account name:`. `shutdown 0` counts fifteen
-seconds down, prints GOODBYE and returns to single user mode.
-
-### Shutting down
-
-BOSS/IX marks its filesystems dirty while mounted, so quit in this order:
-
-1. `CTRL+D` at `ADMIN>`
-2. answer `shutdown` to `single, multi, shutdown?`
-3. wait for `System shutdown.  Please reboot...`
-4. `CTRL+X` for the emulator debugger, then `quit`
-
-If you break into the debugger while BOSS/IX is idle it reports the CPU as
-stopped waiting for an interrupt. That is the kernel's idle instruction, not a
-hang.
-
-## Emulator commands
-
-`CTRL+X` breaks in at any time; `g` continues, `quit` exits.
-
-| command | what it does |
-|---|---|
-| `device wd image <file> [unit]` | attach a disk image |
-| `device mmu registers` | dump the eight segment descriptors |
-| `device fw registers` | show the 4-Way boards |
-| `watch <n> <addr> [len]` | log every write into a range, DMA included |
-| `history [count]` | recently executed instructions, marked S or U |
-| `traptrace 1` | log system calls made from user mode |
-| `msave [file]` | write all of RAM to a file |
-
-## State of the machine
-
-Single user and multi user both work: shell, filesystem, Business Basic, disk
-read and write, login, and a clean `shutdown`. The clock runs, where it used to
-stand still.
-
-What is left is written up at the end of NOTES.md. The short version: the
-parallel printer devices `/dev/lp` and `/dev/p1` do not open, which is what the
-startup notice in `/etc/sys.log` is complaining about; only the console has a
-real endpoint, so the extra 4-Way terminal ports carry the login banner but have
-nowhere to appear; and device time is paced by the run loop rather than by a
-crystal, so the emulated clock gains while the machine is idle.
-
-The 4-Way protocol as read out of the service manual, and the several places
-where the machine turned out not to follow it, are in NOTES.md.
+The polling counters in the device tick come down once per pass round the loop,
+not once per instruction. Putting a sleep in the idle path turns every poll that
+hangs off a counter into one poll every several seconds. Nothing fails to boot
+when that happens; the machine merely becomes impossible to type at, which is
+why it is easy to ship by accident. Measuring the echo one key at a time, with a
+pause between keys, is what catches it.
 
 ## Credits and licence
 
 Emulator groundwork, the machine itself, the media and a great deal of
-documentation preservation: Armin Diehl, [ardiehl.de/basicfour](http://www.ardiehl.de/basicfour/).
-The 68000 core is Musashi. Manuals from [bitsavers.org](http://bitsavers.org),
-principally BFISD 8079 for the CMB and M8155A for the 4-Way controller.
+documentation preservation: Armin Diehl,
+[ardiehl.de/basicfour](http://www.ardiehl.de/basicfour/). The 68000 core is
+Musashi. Manuals from [bitsavers.org](http://bitsavers.org), principally BFISD
+8079 for the CMB and M8155A for the 4-Way controller.
 
 This program is free software under the **GNU General Public License, version 2
 or later**; see [LICENSE](LICENSE). BOSS/IX is copyright MAI Basic Four, Inc.;
